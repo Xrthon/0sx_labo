@@ -4,7 +4,7 @@
 int LED_PIN[] = { 8, 9 };
 int LENGTH_LED_TABLE = sizeof(LED_PIN) / sizeof(LED_PIN[0]), vitess = 0;
 unsigned long currenTime = 0, previousTimer = 0;
-const int loadLCDTimer = 3000, rate = 350;
+const int loadLCDTimer = 3000, rate = 200;
 enum LCDScreen { PHARE_STATE,
                  DIRECTION_STATE };
 enum LedStats { LED_OFF,
@@ -131,24 +131,42 @@ void loop() {
   lightState();
   jostick(totalSpeed, totalRotation);
 }
-/**====================================ShowDA===================================*/
 
+
+
+
+
+
+
+
+
+/**====================================ShowDA===================================*/
+//Afficher le numero Etd
 void showDa() {
-  Serial.print("etd:1993855, x: ");
+  Serial.print("etd:1993855,x:");
   Serial.print(analogRead(A2));
-  Serial.print(", y:");
+  Serial.print(",y:");
   Serial.print(analogRead(A1));
-  Serial.print(", sys:");
+  Serial.print(",sys:");
   Serial.print(ledstate);
   Serial.println();
 }
 
 
-/**====================================PhotoResistance===================================*/
 
+
+
+
+
+/**====================================PhotoResistance===================================*/
+//Map la valeur de la photoresistance en Pourcentage
 int valueOfPhotoresistancePercent() {
   return map(analogRead(A0), 0, 1023, 0, 100);
 }
+
+
+
+//Etat de la LED
 void lightState() {
   static unsigned long lastTimer = currenTime;
   const int delay = 5000;
@@ -164,6 +182,9 @@ void lightState() {
     lastTimer = currenTime;
   }
 }
+
+
+//Changer l'état de la LED
 void turnTheLEDOnOrOff() {
   for (int i = 0; i < LENGTH_LED_TABLE; i++) {
     digitalWrite(LED_PIN[i], ledstate);
@@ -174,13 +195,23 @@ void turnTheLEDOnOrOff() {
 
 
 /**====================================Jostick===================================*/
+
+//Valeur map pour acceleration des dirrections
 int jostickValueX() {
   return map(analogRead(A2), 0, 1023, -15, 15);
 }
+
+//Valeur map pour acceleration des Vitesses
 int jostickValueY() {
   return map(analogRead(A1), 0, 1023, -5, 5);
 }
 
+
+
+
+
+
+//Valeur lue en entrer du jostick en Y
 void speedJostick(int &totalSpeed) {
   static int lastSpeedValue;
   static unsigned long accelerationTimer = currenTime;
@@ -188,7 +219,7 @@ void speedJostick(int &totalSpeed) {
   jostickDirectionY = (jostickValueY() < 0) ? REVERSE : (jostickValueY() > 0) ? DRIVE
                                                                               : NEUTRALY;
 
-  if (currenTime - accelerationTimer >= 200) {
+  if (currenTime - accelerationTimer >= rate) {
     switch (jostickDirectionY) {
       case NEUTRALY:
         if (totalSpeed <= 2 && totalSpeed >= 0) {
@@ -221,6 +252,15 @@ void speedJostick(int &totalSpeed) {
     accelerationTimer = currenTime;
   }
 }
+
+
+
+
+
+
+
+
+//Valeur lue en entrer du jostick en X
 void rotationJostick(int &totalRotation) {
   jostickDirectionX = (jostickValueX() < 0) ? TURNLEFT : (jostickValueX() > 0) ? TURNRIGHT
                                                                                : NEUTRALX;
@@ -229,7 +269,7 @@ void rotationJostick(int &totalRotation) {
   static int lastDirectionValue;
   int actualDirectionValue = jostickValueX();
 
-  if (currenTime - directionTimer >= 200) {
+  if (currenTime - directionTimer >= rate) {
     switch (jostickDirectionX) {
       case NEUTRALX:
         if (totalRotation <= 15 && totalRotation >= 0) {
@@ -262,6 +302,14 @@ void rotationJostick(int &totalRotation) {
     directionTimer = currenTime;
   }
 }
+
+
+
+
+
+
+
+//Regrouper les deux parties du jostick en une fonction
 void jostick(int &totalSpeed, int &totalRotation) {
 
   speedJostick(totalSpeed);
@@ -270,18 +318,30 @@ void jostick(int &totalSpeed, int &totalRotation) {
 
 
 
+
+
+
+
+
+
+
 /**====================================LCD===================================*/
+
+//Changer la vue de l'écran LCD
 void changeScreenOfLCD() {
-  if (currenTime > 3000) {
     lcdScreen = (lcdScreen == PHARE_STATE) ? DIRECTION_STATE : PHARE_STATE;
-  }
 }
-//Jostick
+
+
+
+
+
+//Vitess (Avant/Arriere)
 void showSpeed(int speed) {
 
   char directionY = (jostickDirectionY == REVERSE) ? 'R' : (jostickDirectionY == DRIVE) ? 'D'
                                                                                         : 'N';
-  speed = (speed < 1) ? speed * -1 : speed;
+  speed = (speed < 1) ? speed   * -1 : speed;
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(directionY);
@@ -290,6 +350,11 @@ void showSpeed(int speed) {
   lcd.setCursor(7, 0);
   lcd.print("km/h");
 }
+
+
+
+
+// Rotation (Gauche/ Droit)
 void showRotation(int rotation) {
 
   char directionX = (jostickDirectionX == TURNLEFT) ? 'G' : (jostickDirectionX == TURNRIGHT) ? 'D'
@@ -303,7 +368,14 @@ void showRotation(int rotation) {
   lcd.setCursor(7, 1);
   lcd.write(arrowSignal);
 }
-//PhotoResistance
+
+
+
+
+
+
+
+//Montrer Etat LED
 void showLightState() {
   lcd.clear();
   lcd.setCursor(0, 0);
